@@ -50,6 +50,7 @@ app.get('/get-all-posts',(req, res) => {
 
 // =======================================
 
+//Get user specific posts
 app.get('/get-user-posts/:email',(req, res) => {
 	const { email } = req.params;
 
@@ -62,6 +63,62 @@ app.get('/get-user-posts/:email',(req, res) => {
 		.catch(err => res.status(400).json('something went wrong response?'))
 })
 
+// =======================================
+
+//Add a like to a post
+
+app.patch('/add-like', (req, res) => {
+	const { id, email } = req.body;
+
+	db.select('likes')
+	.from('posts')
+	.where({id})
+		.then(oldLikesArray => {
+			const newLikesArray = [...oldLikesArray[0].likes, email]
+
+			console.log(newLikesArray)
+
+			db.select('*')
+			.from('posts')
+			.where({id})
+			.update({likes: newLikesArray})
+				.then(() => {
+					db('*')
+					.from('posts')
+					.then(data => res.json(data))
+				})
+				.catch(err => console.log('what to do in this case 2?'))
+		})
+		.catch(err => console.log('what to do in this case 1?'))
+})
+// =======================================
+
+//Reemove a like from a post
+
+app.patch('/remove-like', (req, res) => {
+	const { id, email } = req.body;
+
+	db.select('likes')
+	.from('posts')
+	.where({id})
+		.then(oldLikesArray => {
+			const newLikesArray = oldLikesArray[0].likes.filter(voter => voter !== email)
+
+			console.log(newLikesArray)
+
+			db.select('*')
+			.from('posts')
+			.where({id})
+			.update({likes: newLikesArray})
+				.then(() => {
+					db('*')
+					.from('posts')
+					.then(data => res.json(data))
+				})
+				.catch(err => console.log('what to do in this case 2?'))
+		})
+		.catch(err => console.log('what to do in this case 1?'))
+})
 // =======================================
 
 // Sign in to app
@@ -212,8 +269,8 @@ app.delete('/delete-post/:id', (req, res) => {
 
 // 'sign-in' - done
 // 'register' - done
-// 'get-all-posts'
-// 'get-user-posts'
+// 'get-all-posts' - done
+// 'get-user-posts' - done
 // 'get-user-data' - done
 // 'add-post' - done
 // 'delete-post' - done
