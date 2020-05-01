@@ -17,23 +17,16 @@ const app = express();
 app.use(express.json())
 app.use(cors())
 
-// Endpoint
+// =======================================
+// Endpoints //
+// =======================================
 
-// app.get('/get-user/:email', (req, res) => {
-// 	const { email } = req.params;
-
-
-
-// 	res.json(email)
-// })
 
 // Sign in to app
+
 app.post('/login', (req, res) => {
 	const { email, password } = req.body;
 
-	// should turn email to lowercase in front end
-		const emailForNow = email.toLowerCase()
-	//
 	if(!email || !password) {
 		console.log('should actually throw error')
 
@@ -43,7 +36,7 @@ app.post('/login', (req, res) => {
 
 	db.select('*')
 	.from('login')
-	.where({email: emailForNow}/*NOTICE - to change*/)
+	.where({email: email}/*NOTICE - to change*/)
 		.then(data => {
 
 			const isValid = bcrypt.compareSync(password, data[0].hash)
@@ -61,8 +54,10 @@ app.post('/login', (req, res) => {
 		.catch(/* error is in credentials */ )
 })
 
+// =======================================
 
 //Register to app
+
 app.post('/register', (req, res) => {
 	const { email, password, name } = req.body;
 
@@ -75,7 +70,7 @@ app.post('/register', (req, res) => {
 	db.transaction(trx => {
 		trx
 		.insert({
-			email: email.toLowerCase(),
+			email,
 			hash
 		})
 		.into('login')
@@ -98,17 +93,98 @@ app.post('/register', (req, res) => {
 
 })
 
+// =======================================
+
+// Add a new post
+
+app.post('/add-post', (req, res) => {
+	const { email, name, content } = req.body;
+
+	db.transaction(trx => {
+		trx.insert({
+			email,
+			content,
+			name,
+			created: new Date().toString().substring(0, 10)
+		})
+		.into('posts')
+		.returning('id')
+			.then(id => {
+				return trx
+				.select('posts')
+				.from('users')
+				.where({email: email})
+					.then(oldPostsArray => {
+						const newPostsArray = [...oldPostsArray[0].posts, id[0]]
+						return trx('users')
+						.where({email: email})
+						.update({posts: newPostsArray})
+						.returning('*')
+							.then(/*NEED TO DECIDE WHAT TO SEND BACK)*/ console.log('add post - return?'))
+
+					})
+					.then(trx.commit)
+					.catch(trx.rollback)
+			})
+	})
+
+})
+
+// =======================================
+
+//Delete a post
+
+app.delete('/delete-post/:id', (req, res) => {
+	const { id } = req.params;
+
+	//finding and removing the post from 'posts' by id
+	db.transaction(trx => {
+		trx('posts')
+		.where({id})
+		.del()
+		.returning('email')
+			.then(userEmail => {
+				//returning the post's email and finding the user by email
+				return trx.select('posts')
+				.from('users')
+				.where({email: userEmail[0]})
+					.then( oldPostsArray => {
+						console.log(oldPostsArray[0].posts)
+						newPostsArray = oldPostsArray[0].posts.filter(postId => postId !== id);
+						// removing post from user's posts array
+						return trx('users')
+						.where({email: userEmail[0]})
+						.update({ posts: newPostsArray})
+							.then(result => console.log(/*need to decide*/'delete post responsd with success?' ))
+					})
+					.then(trx.commit)
+					.catch(trx.rollback)
+
+			})	
+	})
+})
+
+
+
+
+// =======================================
+
+
 // 'sign-in' - done
 // 'register' - done
 // 'get-all-posts'
 // 'get-user-posts'
 // 'get-user-data'
-// 'add-post'
-// 'delete-post'
+// 'add-post' - done
+// 'delete-post' - done
 // 'add-like'
 // 'remove-like'
 
 //
+
+// =======================================
+// =======================================
+
 
 app.listen(3001, () => {
 	console.log('app is running on port 3001');
