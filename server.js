@@ -22,6 +22,48 @@ app.use(cors())
 // =======================================
 
 
+//Getting user's data
+
+app.get('/get-user-info/:email',(req, res) => {
+	const { email } = req.params;
+
+	db('*')
+	.from('users')
+	.where({email})
+		.then(data => res.json(data[0]))
+		.catch(err => res.status(400).json('user not found'))
+})
+
+// =======================================
+
+
+//Getting all posts
+
+app.get('/get-all-posts',(req, res) => {
+	db('*')
+	.from('posts')
+		.then(data => {
+			res.json(data)
+		})
+		.catch(err => res.status(400).json('something went wrong response?'))
+})
+
+// =======================================
+
+app.get('/get-user-posts/:email',(req, res) => {
+	const { email } = req.params;
+
+	db('*')
+	.from('posts')
+	.where({email})
+		.then(data => {
+			res.json(data)
+		})
+		.catch(err => res.status(400).json('something went wrong response?'))
+})
+
+// =======================================
+
 // Sign in to app
 
 app.post('/login', (req, res) => {
@@ -165,8 +207,6 @@ app.delete('/delete-post/:id', (req, res) => {
 })
 
 
-
-
 // =======================================
 
 
@@ -174,7 +214,7 @@ app.delete('/delete-post/:id', (req, res) => {
 // 'register' - done
 // 'get-all-posts'
 // 'get-user-posts'
-// 'get-user-data'
+// 'get-user-data' - done
 // 'add-post' - done
 // 'delete-post' - done
 // 'add-like'
