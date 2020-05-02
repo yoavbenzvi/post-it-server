@@ -24,12 +24,12 @@ app.use(cors())
 
 //Getting user's data
 
-app.get('/get-user-info/:email',(req, res) => {
-	const { email } = req.params;
+app.get('/get-user-info/:id',(req, res) => {
+	const { id } = req.params;
 
 	db('*')
 	.from('users')
-	.where({email})
+	.where({id})
 		.then(data => res.json(data[0]))
 		.catch(err => res.status(400).json('user not found'))
 })
@@ -93,7 +93,7 @@ app.patch('/add-like', (req, res) => {
 })
 // =======================================
 
-//Reemove a like from a post
+//Remove a like from a post
 
 app.patch('/remove-like', (req, res) => {
 	const { id, email } = req.body;
@@ -135,7 +135,7 @@ app.post('/login', (req, res) => {
 
 	db.select('*')
 	.from('login')
-	.where({email: email}/*NOTICE - to change*/)
+	.where({email})
 		.then(data => {
 
 			const isValid = bcrypt.compareSync(password, data[0].hash)
@@ -143,7 +143,7 @@ app.post('/login', (req, res) => {
 			if(isValid) {
 				db.select('*')
 				.from('users')
-				.where({email: emailForNow}/*NOTICE - to change*/)
+				.where({email})
 					.then(user => {
 						res.json(user[0])
 					})
@@ -219,7 +219,12 @@ app.post('/add-post', (req, res) => {
 						.where({email: email})
 						.update({posts: newPostsArray})
 						.returning('*')
-							.then(/*NEED TO DECIDE WHAT TO SEND BACK)*/ console.log('add post - return?'))
+							.then(() => {
+								db('*')
+								.from('posts')
+									.then(data => res.json(data))
+							})
+							.catch(/*add catch*/)
 
 					})
 					.then(trx.commit)
@@ -248,13 +253,17 @@ app.delete('/delete-post/:id', (req, res) => {
 				.from('users')
 				.where({email: userEmail[0]})
 					.then( oldPostsArray => {
-						console.log(oldPostsArray[0].posts)
 						newPostsArray = oldPostsArray[0].posts.filter(postId => postId !== id);
 						// removing post from user's posts array
 						return trx('users')
 						.where({email: userEmail[0]})
 						.update({ posts: newPostsArray})
-							.then(result => console.log(/*need to decide*/'delete post responsd with success?' ))
+							.then(() => {
+								db('*')
+								.from('posts')
+									.then(data => res.json(data))
+							})
+							.catch(err => console.log(err))
 					})
 					.then(trx.commit)
 					.catch(trx.rollback)
