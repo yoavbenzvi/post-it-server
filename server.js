@@ -22,6 +22,22 @@ app.use(cors())
 // =======================================
 
 
+// Getting user's id
+
+app.get('/get-user-id/:email', (req, res) => {
+	const { email } = req.params;
+
+	db.select('id')
+	.from('users')
+	.where({email})
+		.then(id => {
+			res.json(id[0].id)
+		})
+		.catch(/*do something here*/)
+})
+
+// =======================================
+
 //Getting user's data
 
 app.get('/get-user-info/:id',(req, res) => {
@@ -31,7 +47,7 @@ app.get('/get-user-info/:id',(req, res) => {
 	.from('users')
 	.where({id})
 		.then(data => res.json(data[0]))
-		.catch(err => res.status(400).json('user not found'))
+		.catch(/*do something here*/)
 })
 
 // =======================================
@@ -51,17 +67,38 @@ app.get('/get-all-posts',(req, res) => {
 // =======================================
 
 //Get user specific posts
-app.get('/get-user-posts/:email',(req, res) => {
-	const { email } = req.params;
+app.get('/get-user-posts/:id',(req, res) => {
+	const { id } = req.params;
+
+	db.select('email')
+	.from('users')
+	.where({id})
+		.then(email => {
+			db.select('*')
+			.from('posts')
+			.where({email: email[0].email})
+				.then(data => res.json(data))
+		})
+
+
+////////////////////////////////NEED TO ADD CATCHES
+})
+
+// =======================================
+
+//Search user
+app.get('/search-user/:name', (req, res) => {
+	const { name } = req.params;
 
 	db('*')
-	.from('posts')
-	.where({email})
+	.from('users')
+	.where('name', 'ilike', `${name}%`)
 		.then(data => {
 			res.json(data)
 		})
-		.catch(err => res.status(400).json('something went wrong response?'))
+		.catch(/* should do something here */)	
 })
+
 
 // =======================================
 
@@ -75,8 +112,6 @@ app.patch('/add-like', (req, res) => {
 	.where({id})
 		.then(oldLikesArray => {
 			const newLikesArray = [...oldLikesArray[0].likes, email]
-
-			console.log(newLikesArray)
 
 			db.select('*')
 			.from('posts')
@@ -103,8 +138,6 @@ app.patch('/remove-like', (req, res) => {
 	.where({id})
 		.then(oldLikesArray => {
 			const newLikesArray = oldLikesArray[0].likes.filter(voter => voter !== email)
-
-			console.log(newLikesArray)
 
 			db.select('*')
 			.from('posts')
