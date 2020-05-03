@@ -33,7 +33,7 @@ app.get('/get-user-id/:email', (req, res) => {
 		.then(id => {
 			res.json(id[0].id)
 		})
-		.catch(/*do something here*/)
+		.catch(err => res.status(400).json('error - get user id'))
 })
 
 // =======================================
@@ -47,7 +47,7 @@ app.get('/get-user-info/:id',(req, res) => {
 	.from('users')
 	.where({id})
 		.then(data => res.json(data[0]))
-		.catch(/*do something here*/)
+		.catch(err => res.status(400).json('error - get user info'))
 })
 
 // =======================================
@@ -61,7 +61,7 @@ app.get('/get-all-posts',(req, res) => {
 		.then(data => {
 			res.json(data)
 		})
-		.catch(err => res.status(400).json('something went wrong response?'))
+		.catch(err => res.status(400).json('error - get all posts'))
 })
 
 // =======================================
@@ -79,9 +79,8 @@ app.get('/get-user-posts/:id',(req, res) => {
 			.where({email: email[0].email})
 				.then(data => res.json(data))
 		})
+		.catch(err => res.status(400).json('error - get user posts'))
 
-
-////////////////////////////////NEED TO ADD CATCHES
 })
 
 // =======================================
@@ -96,7 +95,7 @@ app.get('/search-user/:name', (req, res) => {
 		.then(data => {
 			res.json(data)
 		})
-		.catch(/* should do something here */)	
+		.catch(err => res.status(400).json('error - search user'))	
 })
 
 
@@ -122,9 +121,9 @@ app.patch('/add-like', (req, res) => {
 					.from('posts')
 					.then(data => res.json(data))
 				})
-				.catch(err => console.log('what to do in this case 2?'))
+				.catch(err => res.status(500).json('error - add like'))
 		})
-		.catch(err => console.log('what to do in this case 1?'))
+		.catch(err => res.status(400).json('error - add like'))
 })
 // =======================================
 
@@ -148,9 +147,9 @@ app.patch('/remove-like', (req, res) => {
 					.from('posts')
 					.then(data => res.json(data))
 				})
-				.catch(err => console.log('what to do in this case 2?'))
+				.catch(err => res.status(500).json('error - remove like'))
 		})
-		.catch(err => console.log('what to do in this case 1?'))
+		.catch(err => res.status(400).json('error - remove like'))
 })
 // =======================================
 
@@ -160,9 +159,7 @@ app.post('/login', (req, res) => {
 	const { email, password } = req.body;
 
 	if(!email || !password) {
-		console.log('should actually throw error')
-
-		//error something went wrong return modal popper
+		res.status(400).json('error - missing credentials')
 	}
 
 
@@ -180,10 +177,10 @@ app.post('/login', (req, res) => {
 					.then(user => {
 						res.json(user[0])
 					})
-					.catch(/* error user not found */ )
+					.catch(err => res.status(500).json('login - response error'))
 			}
 		})
-		.catch(/* error is in credentials */ )
+		.catch(err => res.status(400).json('login - DB error'))
 })
 
 // =======================================
@@ -194,7 +191,7 @@ app.post('/register', (req, res) => {
 	const { email, password, name } = req.body;
 
 	if(!email || !name || !password) {
-		return res.status(400).json(/*ERROR*/)
+		return res.status(400).json(new Error('error - missing credentials'))
 	}
 
 	const hash = bcrypt.hashSync(password);
@@ -217,11 +214,12 @@ app.post('/register', (req, res) => {
 				.then(user => {
 					res.json(user[0])
 				})
+				.catch(err => res.status(500).json('register - response error'))
 		})
 		.then(trx.commit)
 		.catch(trx.rollback)
 	})
-	.catch(/*ERROR*/)
+	.catch(err => res.status(400).json('register - DB error'))
 
 })
 
@@ -257,12 +255,13 @@ app.post('/add-post', (req, res) => {
 								.from('posts')
 									.then(data => res.json(data))
 							})
-							.catch(/*add catch*/)
+							.catch(err => res.status(400).json('error - post response'))
 
 					})
 					.then(trx.commit)
 					.catch(trx.rollback)
 			})
+			.catch(err => res.status(500).json('error - post DB'))
 	})
 
 })
@@ -296,30 +295,14 @@ app.delete('/delete-post/:id', (req, res) => {
 								.from('posts')
 									.then(data => res.json(data))
 							})
-							.catch(err => console.log(err))
+							.catch(err => res.status(400).json('error - post delete'))
 					})
 					.then(trx.commit)
 					.catch(trx.rollback)
-
 			})	
+			.catch(err => res.status(400).json('error - post delete'))
 	})
 })
-
-
-// =======================================
-
-
-// 'sign-in' - done
-// 'register' - done
-// 'get-all-posts' - done
-// 'get-user-posts' - done
-// 'get-user-data' - done
-// 'add-post' - done
-// 'delete-post' - done
-// 'add-like'
-// 'remove-like'
-
-//
 
 // =======================================
 // =======================================
